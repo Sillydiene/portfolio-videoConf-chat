@@ -14,31 +14,16 @@ export default function ChatApp() {
     const [error, setError] = useState("");
     const messagesEndRef = useRef(null);
 
+    const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:3001";
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, loading, isOpen, error]);
 
-    const appendToLastAssistant = (delta) => {
-        setMessages((prev) => {
-            const next = [...prev];
-            const lastIndex = next.length - 1;
-
-            if (lastIndex < 0 || next[lastIndex].role !== "assistant") {
-                return prev;
-            }
-
-            next[lastIndex] = {
-                ...next[lastIndex],
-                content: `${next[lastIndex].content}${delta}`,
-            };
-
-            return next;
-        });
-    };
-
     const sendMessage = async (event) => {
         event.preventDefault();
         const message = input.trim();
+
         if (!message || loading) return;
 
         setError("");
@@ -49,10 +34,13 @@ export default function ChatApp() {
         setLoading(true);
 
         try {
-            const response = await fetch("/api/chat", {
+            const response = await fetch(`${API_URL}/api/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message, history: nextMessages }),
+                body: JSON.stringify({
+                    message,
+                    history: nextMessages,
+                }),
             });
 
             const data = await response.json();
@@ -62,21 +50,21 @@ export default function ChatApp() {
             }
 
             setMessages((prev) => {
-                const next = [...prev];
-                next[next.length - 1] = {
+                const updated = [...prev];
+                updated[updated.length - 1] = {
                     role: "assistant",
                     content: data.text || "(Réponse vide)",
                 };
-                return next;
+                return updated;
             });
         } catch (err) {
             setMessages((prev) => {
-                const next = [...prev];
-                next[next.length - 1] = {
+                const updated = [...prev];
+                updated[updated.length - 1] = {
                     role: "assistant",
                     content: "Je n’ai pas pu répondre pour le moment.",
                 };
-                return next;
+                return updated;
             });
 
             setError(err.message || "Erreur inconnue");
@@ -142,10 +130,22 @@ export default function ChatApp() {
                         }}
                     >
                         <div>
-                            <div style={{ color: "#fff", fontWeight: 700, fontSize: "18px" }}>
+                            <div
+                                style={{
+                                    color: "#fff",
+                                    fontWeight: 700,
+                                    fontSize: "18px",
+                                }}
+                            >
                                 Chat assistant
                             </div>
-                            <div style={{ color: "#94a3b8", fontSize: "13px", marginTop: "4px" }}>
+                            <div
+                                style={{
+                                    color: "#94a3b8",
+                                    fontSize: "13px",
+                                    marginTop: "4px",
+                                }}
+                            >
                                 Pose ta question ici
                             </div>
                         </div>
